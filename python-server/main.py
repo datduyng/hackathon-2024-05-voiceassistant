@@ -30,7 +30,39 @@ def chat_endpoint(message: str):
 
 @app.get("/chat-raw")
 def chat_raw_endpoint(message: str):
-    result = interpreter.chat(message, stream=False)
+    prompt = f"""You Follow these rules
+- Don't use 'computer' module as you aren't running in --os mode. Try to use applescript and python
+- To browse the web, you could use webdriver or requests module depends on if that website would be blocked or not i.e use webdriver for google websearch if needed w
+- You don't have access to read or understand images just focus on text
+- If you need to search the web, call following endpoints
+curl -X GET 'https://openai-gateway.vercel.app/api/websearch/image?query=<YOUR_QUERY>'
+{{
+    "totalEstimatedMatches": 646,
+    "nextOffset": 2,
+    "currentOffset": 0,
+    "value": [
+        {{
+            "name": "Testing - Anne Arundel Community College",
+            "contentUrl": "https://www.aacc.edu/media/college/images/students/general-stock/testing_shutterstock_119579611_1200x600.jpg",
+            "encodingFormat": "jpeg",
+            "width": 1200,
+            "height": 600
+        }},
+        {{
+            "name": "B.C. COVID-19 update: Free rapid tests coming for 60+ - New West Record",
+            "contentUrl": "https://www.vmcdn.ca/f/files/biv/images/covid-test-gettyimages-1316289788.jpg;w=960",
+            "encodingFormat": "jpeg",
+            "width": 960,
+            "height": 641
+        }}
+  ]
+}}
+
+User Input: {message}
+"""
+
+    print(prompt)
+    result = interpreter.chat(prompt, stream=False)
     return {"result": result}
 
 
