@@ -1,0 +1,13 @@
+
+@base_url = http://localhost:5012
+
+### Send chat endpoint
+
+GET {{base_url}}/chat-raw?message=Open email and summarize top 10 emails I received today
+
+### Find hacker news articles
+GET {{base_url}}/chat-raw?message=Summarize top 10 hacker news articles
+
+### Find hacker news articles
+GET {{base_url}}/chat-raw?message=Send an email to John Doe with subject "Hello" and body "Hello John, how are you doing? using applescript to interact with native macos app"
+

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hackathon Floating Window</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        background-color: #1e1e1e;
+        color: #f1f1f1;
+        margin: 0;
+        padding: 5px;
+        text-align: left;
+        position: relative;
+      }
+      .draggable {
+        -webkit-app-region: drag;
+        cursor: move;
+      }
+      #analysis {
+        padding: 10px;
+        margin-top: 5px;
+        font-size: 12px;
+      }
+      .window-message {
+        padding-top: 2px;
+      }
+      #closeBtn {
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 5px;
+        margin: -5px;
+        border: 5px solid transparent;
+        color: #f1f1f1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="draggable">
+      <button id="closeBtn" title="Close">&times;</button>
+      <!-- Close button -->
+      <div id="analysis" class="draggable"></div>
+      <script src="floating-window.mjs"></script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "hackathon-2024-05-voiceassitant",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "type": "module",
+  "dependencies": {
+    "asynckit": "^0.4.0",
+    "axios": "^1.6.8",
+    "buffer": "^6.0.3",
+    "dotenv": "^16.4.5",
+    "electron": "^30.0.2",
+    "electron-store": "^9.0.0",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "form-data": "^4.0.0",
+    "fs": "^0.0.1-security",
+    "get-windows": "^9.1.1",
+    "mime-types": "^2.1.35",
+    "openai": "^4.40.2",
+    "path": "^0.12.7"
+  },
+  "scripts": {
+    "start-py-server": "cd python-server && uvicorn main:app --port 5012 --reload",
+    "start": "electron .",
+    "build-mac": "electron-packager . --overwrite --platform=darwin --icon=assets/icons/mac-icon.icns --arch=x64 --prune=true --out=releases"
+  },
+  "devDependencies": {
+    "electron-packager": "^17.1.2"
+  }
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hackathon 2024 voice assistant</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #1e1e1e;
+        color: #f1f1f1;
+        margin: 0;
+        padding: 20px;
+        font-size: 14px;
+      }
+      h1 {
+        color: #f1f1f1;
+        font-size: 18px;
+      }
+      #analysis {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #2d2d2d;
+        border: 1px solid #444;
+      }
+      .window-section {
+        background-color: #2d2d2d;
+        border: 1px solid #444;
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+      .window-section h3 {
+        margin-top: 0;
+        color: #40005e;
+      }
+      .window-message {
+        color: #f1f1f1;
+        padding-top: 2px;
+      }
+      .hidden {
+        display: none;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+
+      /* Modal Content/Box */
+      .modal-content {
+        background-color: #2d2d2d;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #444;
+        width: 80%;
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: #f1f1f1;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .modal-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        margin-left: 10px;
+      }
+
+      #api-key-input {
+        width: 50%;
+        margin-left: 10px;
+        background-color: #2d2d2d;
+        color: #f1f1f1;
+        border: 1px solid #444;
+      }
+      .modal-row {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="settingsModal">
+      <div class="modal-content">
+        <h4>Input Method</h4>
+        <div class="modal-row">
+          <label for="api-key-input">OpenAI API-key:</label>
+          <input
+            type="text"
+            id="api-key-input"
+            class="modal-api-key-input"
+            placeholder="Enter API Key"
+          />
+        </div>
+      </div>
+    </div>
+    <div id="analysis"></div>
+    <script src="main-window.mjs"></script>
+    <script>
+      var btn = document.getElementById("settingsIcon");
+      const apiKeyInput = document.getElementById("api-key-input");
+
+      apiKeyInput.addEventListener("input", () => {
+        console.log("input api keu", apiKeyInput.value);
+        const apiKey = apiKeyInput.value;
+        ipcRenderer.send("submit-api-key", apiKey); // Send the full API key to main process
+        apiKeyInput.value = apiKey; // Mask the API key in the input field
+      });
+
+      ipcRenderer.send("request-api-key");
+
+      // Handle receiving the masked API key
+      ipcRenderer.on("send-api-key", (event, maskedApiKey) => {
+        apiKeyInput.value = maskedApiKey; // Display the masked API key
+      });
+
+      // Handle the toggle between input method radio buttons
+      document
+        .getElementById("inputMethodVoice")
+        .addEventListener("change", (event) => {
+          if (event.target.checked) {
+            ipcRenderer.send("set-input-method", "voice");
+          }
+        });
+      document
+        .getElementById("inputMethodText")
+        .addEventListener("change", (event) => {
+          if (event.target.checked) {
+            ipcRenderer.send("set-input-method", "text");
+          }
+        });
+
+      // On load, request the current input method
+      ipcRenderer.send("request-input-method");
+
+      // Handle receiving the current input method
+      ipcRenderer.on("send-input-method", (event, method) => {
+        if (method === "text") {
+          document.getElementById("inputMethodText").checked = true;
+        } else {
+          document.getElementById("inputMethodVoice").checked = true;
+        }
+      });
+    </script>
+  </body>
+</html>
