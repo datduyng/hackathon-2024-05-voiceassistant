@@ -17,6 +17,10 @@ import { exec } from "child_process";
 import { activeWindow } from "get-windows";
 import Store from "electron-store";
 import { fileURLToPath } from 'url';
+
+import { exampleMilvus } from "./examples/milvus.mjs";
+import { exampleOctoAI } from "./examples/octoai.mjs";
+
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename);
 
@@ -108,6 +112,19 @@ function createFloatingWindow() {
   });
 }
 
+
+ipcMain.on("run-example", async (event, payload) => {
+  console.log("on [run-example]", payload);
+  if (payload?.example === "milvus") {
+    const response = await exampleMilvus(payload?.body);
+    event.reply("run-example-response", response);
+  } else if (payload?.example === "octoai") {
+    const response = await exampleOctoAI(payload?.body);
+    event.reply("run-example-response", response);
+  } else {
+    event.reply("run-example-response", "No example found");
+  }
+});
 
 ipcMain.on("submit-api-key", (_, apiKey) => {
   console.log("API key submitted:", apiKey);

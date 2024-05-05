@@ -26,6 +26,11 @@ ipcRenderer.on("init-mediaRecorder", async () => {
   mediaRecorder.stop();
 });
 
+ipcRenderer.on('run-example-response', async (event, exampleResponse) => {
+  console.log("on [run-example-response]", exampleResponse);
+  updateWindowMessage(JSON.stringify(exampleResponse, null, 2));
+});
+
 ipcRenderer.on("start-recording", async () => {
   try {
     updateWindowMessage("Recording in progress...");

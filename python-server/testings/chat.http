@@ -9,5 +9,13 @@ GET {{base_url}}/chat-raw?message=Open email and summarize top 10 emails I recei
 GET {{base_url}}/chat-raw?message=Summarize top 10 hacker news articles
 
 ### Find hacker news articles
-GET {{base_url}}/chat-raw?message=Send an email to John Doe with subject "Hello" and body "Hello John, how are you doing? using applescript to interact with native macos app"
+GET {{base_url}}/chat-raw?message=open chrome and search for tsla stock price
+
+
+### Find hacker news articles
+GET {{base_url}}/chat-raw?message=Summarize top 10 hacker news articles
+
+
+### Find hacker news articles
+GET {{base_url}}/chat-raw?message=open stack overflow search about the text I have selected
 

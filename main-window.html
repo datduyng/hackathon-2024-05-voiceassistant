@@ -112,6 +112,19 @@
           />
         </div>
       </div>
+      <div>
+        <h4>Examples</h4>
+        <div class="modal-row">
+          <label for="api-key-input">Example type</label>
+          <input
+            type="text"
+            id="run-example-type"
+            class="modal-api-key-input"
+            placeholder="e.g milvus, octoai, etc."
+          />
+          <button id="btn-run-example">Run example</button>
+        </div>
+      </div>
     </div>
     <div id="analysis"></div>
     <script src="main-window.mjs"></script>
@@ -132,6 +145,17 @@
       ipcRenderer.on("send-api-key", (event, maskedApiKey) => {
         apiKeyInput.value = maskedApiKey; // Display the masked API key
       });
+
+      var runExampleBtn = document.getElementById("btn-run-example");
+      var runExampleType = document.getElementById("run-example-type");
+
+      runExampleBtn.onclick = function () {
+        console.log("run example", runExampleType.value);
+        ipcRenderer.send("run-example", {
+          example: runExampleType.value,
+          body: null,
+        });
+      };
 
       // Handle the toggle between input method radio buttons
       document
