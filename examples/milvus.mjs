@@ -1,8 +1,8 @@
 import { Milvus } from "langchain/vectorstores/milvus";
 import { OpenAIEmbeddings } from "@langchain/openai";
 
-export const exampleMilvus = async () => {
-  const milvusInstance = new Milvus()
+export const exampleMilvus = async (body) => {
+  // const milvusInstance = new Milvus()
   // text sample from Godel, Escher, Bach
   const vectorStore = await Milvus.fromTexts(
     [
@@ -18,10 +18,12 @@ export const exampleMilvus = async () => {
       "Tortoise: But it's only a myth. Courage, Achilles.",
     ],
     [{ id: 2 }, { id: 1 }, { id: 3 }, { id: 4 }, { id: 5 }],
-    new OpenAIEmbeddings(),
+    new OpenAIEmbeddings({
+      openAIApiKey: body?.openAIApiKey,
+    }),
     {
       collectionName: "goldel_escher_bach",
-      url: "http://localhost:19121",
+      url: "http://localhost:19530",
     }
   );
 

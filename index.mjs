@@ -17,7 +17,11 @@ import { exec } from "child_process";
 import { activeWindow } from "get-windows";
 import Store from "electron-store";
 import { fileURLToPath } from 'url';
-
+import { MilvusClient } from '@zilliz/milvus2-sdk-node';
+import { Milvus } from "langchain/vectorstores/milvus";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { Document } from "langchain/document";
+import { ChatOpenAI } from "@langchain/openai";
 import { exampleMilvus } from "./examples/milvus.mjs";
 import { exampleOctoAI } from "./examples/octoai.mjs";
 
@@ -27,15 +31,15 @@ const __dirname = path.dirname(__filename);
 const store = new Store();
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
-let openAiApiKey = store.get("userApiKey", "");
-let openai = new OpenAI({
-  apiKey: openAiApiKey,
-});
+
 
 const USE_ELECTRON_PACKAGE_MANAGER = false;
 let tmpFileDir = USE_ELECTRON_PACKAGE_MANAGER
   ? path.join(app.getPath("userData"), ".voiceassistant-tmp")
   : path.join(__dirname, ".voiceassistant-tmp")
+
+
+let skillTmpFolder = path.join(tmpFileDir, "skills");
 
 const appConfig = {
   isDev: true,
@@ -58,7 +62,14 @@ const appConfig = {
   mp3FilePath: path.join(tmpFileDir, "audioInput.mp3"),
   screenshotFilePath: path.join(tmpFileDir, "screenshot.png"),
   audioFilePath: path.join(tmpFileDir, "ttsResponse.mp3"),
+  milvusCollection: "voiceassistant",
+  milvusAddress: "localhost:19530",
 }
+
+let openAiApiKey = store.get(appConfig.storageKeys.openaiKey, "");
+let openai = new OpenAI({
+  apiKey: openAiApiKey,
+});
 
 let isRecording = false;
 let mainWindow;
@@ -75,6 +86,55 @@ let conversationHistory = [
 
 if (!fs.existsSync(appConfig.tmpFileDir)) {
   fs.mkdirSync(appConfig.tmpFileDir, { recursive: true });
+}
+
+if (!fs.existsSync(skillTmpFolder)) {
+  fs.mkdirSync(skillTmpFolder, { recursive: true });
+}
+
+let vectorStore = null;
+async function initMilvusAndRestart() {
+  try {
+    const milvusClient = new MilvusClient(appConfig.milvusAddress);
+    try {
+      await milvusClient.dropCollection({ collection_name: appConfig.milvusCollection });
+    } catch (e) {
+      console.error('Error on dropping collection', e);
+    }
+
+    // Loop through all json file under the skillTmpFolder and insert them into milvus
+    const files = fs.readdirSync(skillTmpFolder);
+
+    const texts = [];
+    const metadata = [];
+    for (const file of files) {
+      // for each json file, read the userQuery and insert it into milvus
+      const data = fs.readFileSync(path.join(skillTmpFolder, file));
+      const skill = JSON.parse(data);
+
+      if (!skill.userQuery || !skill.result) {
+        console.error("Invalid skill file", skill);
+        continue;
+      }
+      texts.push(skill.userQuery);
+      metadata.push({
+        file,
+        // content: skill.result,
+      });
+    }
+
+    console.info("Inserting skills into milvus", texts, metadata);
+
+    vectorStore = await Milvus.fromTexts(texts, metadata, new OpenAIEmbeddings({
+      openAIApiKey: openAiApiKey,
+    }), {
+      collectionName: appConfig.milvusCollection,
+      url: appConfig.milvusAddress,
+    })
+    console.info("Finished inserting skills into milvus");
+  } catch (e) {
+    console.error('Error on initMilvusAndRestart', e);
+  }
 }
 
 function createMainWindow() {
@@ -115,9 +175,13 @@ function createFloatingWindow() {
 
 
 ipcMain.on("run-example", async (event, payload) => {
-  console.log("on [run-example]", payload);
+  openAiApiKey = store.get(appConfig.storageKeys.openaiKey, "");
+  console.log("on [run-example]", openAiApiKey, payload);
   if (payload?.example === "milvus") {
-    const response = await exampleMilvus(payload?.body);
+    const response = await exampleMilvus({
+      ...payload?.body,
+      openAIApiKey: openAiApiKey,
+    });
     event.reply("run-example-response", response);
   } else if (payload?.example === "octoai") {
     const response = await exampleOctoAI(payload?.body);
@@ -225,6 +289,39 @@ async function processInputs(screenshotFilePath, questionInput) {
   } else {
     // research for existing skills if any by calling milvus
     const existingSkill = "";
+    try {
+      if (vectorStore) {
+        console.log("Searching for existing skills", questionInput);
+        const response = await vectorStore.similaritySearch(questionInput, 1);
+        if (response.length > 0) {
+
+          openAiApiKey = store.get(appConfig.storageKeys.openaiKey, "");
+          const openaiModel = new ChatOpenAI({
+            modelName: "gpt-4-0125-preview",
+            temperature: 0,
+            openAIApiKey: openAiApiKey, // In Node.js defaults to process.env.OPENAI_API_KEY
+          });
+
+          const shouldUseRaw = await openaiModel.invoke(`You are helping user to determine if the user query is similar to existing skills. The user query is: ${questionInput}. The existing skill is: ${response[0]?.metadata?.file}. The skill need to be exactly related i.e
+Existing Skill: TSLA earning miss
+User Query: What is the earning of NVDA?
+
+Note that this skill is not exactly related to the user query. Provide 'yes' if the skill is related to the user query, otherwise provide 'no'
+
+Provide yes/no as your answer without quotes or additional text:`);
+          const shouldUse = shouldUseRaw?.toJSON()?.kwargs.content?.trim().toLowerCase();
+
+          console.log("shouldUse answer", shouldUseRaw.toJSON().kwargs.content);
+          if (shouldUse === "yes") {
+            console.log("Existing skill found", response);
+            const skill = JSON.parse(fs.readFileSync(path.join(skillTmpFolder, response[0]?.metadata?.file)));
+            existingSkill = JSON.stringify(skill, null, 2);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error on searching for existing skills", e);
+    }
 
     // if find skills, add it to the promps
     const prompt = `${existingSkill
@@ -232,7 +329,7 @@ async function processInputs(screenshotFilePath, questionInput) {
       : ""
       }
 ## User query
-${questionInput}`;
+${questionInput} `;
 
     let llmresponse = null;
     try {
@@ -363,6 +460,7 @@ async function playVisionApiResponse(inputText) {
     input: inputText,
     voice: voice,
     response_format: "mp3",
+    speed: 2,
   };
 
   try {
@@ -431,7 +529,7 @@ let hasCapturedWindow = false;
 app.whenReady().then(() => {
   createMainWindow();
   createFloatingWindow();
-
+  initMilvusAndRestart();
   // Request microphone access
   systemPreferences
     .askForMediaAccess("microphone")

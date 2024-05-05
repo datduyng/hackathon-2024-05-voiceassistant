@@ -1,0 +1,1 @@
+releases/hackathon-2024-05-voiceassitant-darwin-x64/hackathon-2024-05-voiceassitant.app/Contents/Frameworks/Electron[[:space:]]Framework.framework/Versions/A/Electron[[:space:]]Framework filter=lfs diff=lfs merge=lfs -text

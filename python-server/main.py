@@ -35,8 +35,9 @@ def chat_raw_endpoint(message: str):
 - Don't use 'computer' module as you aren't running in --os mode. Try to use applescript and python
 - To browse the web, you could use webdriver or requests module depends on if that website would be blocked or not i.e use webdriver for google websearch if needed w
 - You don't have access to read or understand images just focus on text
-- If you need to search the web, call following endpoints
-curl -X GET 'https://openai-gateway.vercel.app/api/websearch/image?query=<YOUR_QUERY>'
+- You might be given previous related example but you don't have to use it as it might be not related.
+- Don't Research using Google.com because it's blocked, use https://openai-gateway.vercel.app/api/websearch/image instead. If you need to search the web, call following endpoints
+curl -X GET 'https://openai-gateway.vercel.app/api/websearch?q=<YOUR_QUERY>'
 {{
     "totalEstimatedMatches": 646,
     "nextOffset": 2,
@@ -62,6 +63,7 @@ curl -X GET 'https://openai-gateway.vercel.app/api/websearch/image?query=<YOUR_Q
 {message}
 """
 
+    print("prompt", prompt)
     result = interpreter.chat(prompt, stream=False)
     return {"result": result}
 

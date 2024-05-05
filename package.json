@@ -20,7 +20,8 @@
     "langchain": "^0.1.36",
     "mime-types": "^2.1.35",
     "openai": "^4.40.2",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "zod": "^3.23.6"
   },
   "scripts": {
     "start-py-server": "cd python-server && uvicorn main:app --port 5012 --reload",
