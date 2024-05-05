@@ -7,6 +7,7 @@ import {
   systemPreferences,
 } from "electron";
 import fs from "fs";
+import { writeFile } from "fs/promises"
 import path from "path";
 import axios from "axios";
 import OpenAI from "openai";
@@ -17,6 +18,7 @@ import { exec } from "child_process";
 import { activeWindow } from "get-windows";
 import Store from "electron-store";
 import { fileURLToPath } from 'url';
+import { v4 as uuid } from 'uuid';
 
 import { exampleMilvus } from "./examples/milvus.mjs";
 import { exampleOctoAI } from "./examples/octoai.mjs";
@@ -26,6 +28,8 @@ const __dirname = path.dirname(__filename);
 
 const store = new Store();
 ffmpeg.setFfmpegPath(ffmpegStatic);
+
+let resultStore = new Map();
 
 let openAiApiKey = store.get("userApiKey", "");
 let openai = new OpenAI({
@@ -179,7 +183,8 @@ ipcMain.on("audio-buffer", (event, buffer) => {
             );
 
             updateNotificationWindowText(
-              "There was an error transcribing your recording"
+              "There was an error transcribing your recording",
+              "error"
             );
           }
         })
@@ -191,68 +196,80 @@ ipcMain.on("audio-buffer", (event, buffer) => {
 });
 
 let inputMethod = store.get("inputMethod", "voice") ?? "voice";
-function updateNotificationWindowText(textToDisplay) {
+function updateNotificationWindowText(textToDisplay, type, id) {
   // If the window has been closed by the user, create a new one
   if (!floatingWindow) {
     createNotificationWindow();
   }
   floatingWindow.webContents.send(
     "update-floatingWindow-text",
-    textToDisplay
+    JSON.stringify({ type, text: textToDisplay, id })
   );
 }
 
 async function processInputs(screenshotFilePath, questionInput) {
-  if (hasCapturedWindow) {
-    let visionApiResponse = await callVisionAPI(
-      screenshotFilePath,
-      questionInput
-    );
+  const id = uuid();
+  // if (hasCapturedWindow) {
+  //   let visionApiResponse = await callVisionAPI(
+  //     screenshotFilePath,
+  //     questionInput,
+  //     id
+  //   );
+  //   const type = visionApiResponse ? "success" : "error"
 
-    // If the Vision API response failed it will be null, set error message
-    visionApiResponse =
-      visionApiResponse ?? "There was an error calling the OpenAI Vision API";
+  //   // If the Vision API response failed it will be null, set error message
+  //   visionApiResponse =
+  //     visionApiResponse ?? "There was an error calling the OpenAI Vision API";
 
-    // Update both windows with the response text (refactor this)
-    mainWindow.webContents.send(
-      "send-vision-response-to-windows",
-      visionApiResponse
-    );
-    updateNotificationWindowText(visionApiResponse);
+  //   // Update both windows with the response text (refactor this)
+  //   mainWindow.webContents.send(
+  //     "send-vision-response-to-windows",
+  //     visionApiResponse
+  //   );
+  //   updateNotificationWindowText(visionApiResponse, type, id);
 
-    // Call function to generate and playback audio of the Vision API response
-    await playVisionApiResponse(visionApiResponse);
-  } else {
-    // research for existing skills if any by calling milvus
-    const existingSkill = "";
+  //   // Call function to generate and playback audio of the Vision API response
+  //   await playVisionApiResponse(visionApiResponse);
+  // } else {
+  // research for existing skills if any by calling milvus
+  const existingSkill = "";
 
-    // if find skills, add it to the promps
-    const prompt = `${existingSkill
-      ? `## Existing skill\n${existingSkill}\n`
-      : ""
-      }
+  // if find skills, add it to the promps
+  const prompt = `${existingSkill
+    ? `## Existing skill\n${existingSkill}\n`
+    : ""
+    }
 ## User query
 ${questionInput}`;
 
-    let llmresponse = null;
-    try {
-      const axiosResponse = await axios.post(`${appConfig.pythonBaseUrl}/chat-raw-post`, {
-        message: prompt,
-      });
-      console.log("llmresponse", axiosResponse.data);
-      llmresponse = axiosResponse.data?.result?.at(-1)?.content;
+  let llmresponse = null;
+  let type = "success";
+  try {
+    const axiosResponse = await axios.post(`${appConfig.pythonBaseUrl}/chat-raw-post`, {
+      message: prompt,
+    });
+    console.log("llmresponse", axiosResponse.data);
+    llmresponse = axiosResponse.data?.result?.at(-1)?.content;
 
-    } catch (error) {
-      console.error("Error calling OpenAI:", error);
-      llmresponse = "There was an error calling the OpenAI API";
+    const resultObject = {
+      userQuery: questionInput,
+      result: axiosResponse.data?.result ?? []
     }
 
-    mainWindow.webContents.send(
-      "send-vision-response-to-windows",
-      llmresponse
-    );
-    updateNotificationWindowText(llmresponse);
+    resultStore.set(id, resultObject)
+
+  } catch (error) {
+    console.error("Error calling OpenAI:", error);
+    llmresponse = "There was an error calling the OpenAI API";
+    type = "error"
   }
+
+  mainWindow.webContents.send(
+    "send-vision-response-to-windows",
+    llmresponse
+  );
+  updateNotificationWindowText(llmresponse, type, id);
+  // }
 }
 
 async function captureWindow(windowName) {
@@ -309,7 +326,7 @@ async function transcribeUserRecording(mp3FilePath) {
 }
 
 // Function to call the Vision API with the screenshot and transcription of the user question
-async function callVisionAPI(inputScreenshot, audioInput) {
+async function callVisionAPI(inputScreenshot, audioInput, id) {
   const base64Image = fs.readFileSync(inputScreenshot).toString("base64");
   const dataUrl = `data:image/png;base64,${base64Image}`;
   const userMessage = {
@@ -340,6 +357,11 @@ async function callVisionAPI(inputScreenshot, audioInput) {
       role: "assistant",
       content: responseContent,
     });
+
+    resultStore.set(id, {
+      userQuery: audioInput,
+      result: conversationHistory
+    })
 
     return responseContent;
   } catch (error) {
@@ -427,6 +449,22 @@ ipcMain.on("close-notification-window", () => {
   }
 });
 
+// Close and nullify the notification window if it's closed by the user
+ipcMain.on("save-skill", async (event, id) => {
+  if (!id) return;
+  const result = resultStore.get(id);
+  if (!result) {
+    console.log("No result saved", id);
+    console.log(resultStore.entries())
+    return;
+  }
+  const skillDir = path.join(tmpFileDir, 'skills')
+  if (!fs.existsSync(skillDir)) {
+    fs.mkdirSync(skillDir, { recursive: true });
+  }
+  await writeFile(path.join(skillDir, `${id}.json`), JSON.stringify(result), "utf8");
+});
+
 let hasCapturedWindow = false;
 app.whenReady().then(() => {
   createMainWindow();
@@ -485,7 +523,7 @@ app.whenReady().then(() => {
         console.error("Error capturing the active window:", error);
         hasCapturedWindow = false;
         mainWindow.webContents.send("add-window-name-to-app", 'No capturing the active window');
-        updateNotificationWindowText("No capturing the active window");
+        updateNotificationWindowText("No capturing the active window", "error");
       }
       // only start recording if the user is using voice input
       if (inputMethod == "voice") {

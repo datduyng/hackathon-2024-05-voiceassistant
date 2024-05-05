@@ -1,5 +1,7 @@
 const { ipcRenderer } = require("electron");
 
+let activeId = null;
+
 ipcRenderer.on("add-window-name-to-app", (event, windowName) => {
   updateWindowMessage(`Window Selected: ${windowName}`);
 });
@@ -17,8 +19,11 @@ ipcRenderer.on("start-recording", async () => {
   updateWindowMessage("Recording in progress...");
 });
 
-ipcRenderer.on("update-floatingWindow-text", (event, textInput) => {
-  updateWindowMessage(textInput);
+ipcRenderer.on("update-floatingWindow-text", (event, message) => {
+  const data = JSON.parse(message);
+  activeId = data.id ?? null;
+  console.log("Working", data)
+  updateWindowMessage(data.text);
 });
 
 document.getElementById("closeBtn").addEventListener("click", () => {
@@ -26,6 +31,7 @@ document.getElementById("closeBtn").addEventListener("click", () => {
 });
 
 function updateWindowMessage(message) {
+  console.log("UPDATE WINDOW MSG:", message)
   const analysisContainer = document.getElementById("analysis");
 
   let messageDiv = analysisContainer.querySelector(".window-message");
@@ -36,5 +42,17 @@ function updateWindowMessage(message) {
     analysisContainer.appendChild(messageDiv);
   }
 
-  messageDiv.textContent = message;
+  const btn = document.getElementById('save-skill')
+  if (activeId) {
+    btn.classList.remove("hidden")
+  } else {
+    btn.classList.add("hidden");
+  }
+
+  messageDiv.textContent = message ?? "";
+}
+
+function handleSaveSkill() {
+  if (!activeId) return;
+  ipcRenderer.send("save-skill", activeId);
 }
