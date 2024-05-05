@@ -1,6 +1,6 @@
 # EchoAI
 
-EchoAI reimagine how LLM should be used and interact in your daily life
+EchoAI reimagine how LLM should be used and interact in your daily life through providing the seamsly voice interface and sandbox to run and automate code on your computer
 
 ## EchoAI Skills
 - When creating skill, it will be saved under a temporary folder
