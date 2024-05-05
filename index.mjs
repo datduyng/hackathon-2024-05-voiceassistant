@@ -273,6 +273,8 @@ function updateNotificationWindowText(textToDisplay, type, id) {
 
 async function processInputs(screenshotFilePath, questionInput) {
   const id = uuid();
+  console.log("Processing inputs", hasCapturedWindow);
+  // hasCapturedWindow = false;
   if (hasCapturedWindow) {
     let visionApiResponse = await callVisionAPI(
       screenshotFilePath,
@@ -386,6 +388,7 @@ async function captureWindow(windowName) {
 
   if (!selectedSource) {
     console.error("Window not found:", windowName);
+    hasCapturedWindow = false;
     return "Window not found";
   }
 
@@ -393,9 +396,12 @@ async function captureWindow(windowName) {
   const screenshot = selectedSource.thumbnail.toPNG();
   fs.writeFile(appConfig.screenshotFilePath, screenshot, async (err) => {
     if (err) {
+      hasCapturedWindow = false;
       throw err;
     }
   });
+
+  hasCapturedWindow = true;
   return "Window found";
 }
 
@@ -604,6 +610,7 @@ app.whenReady().then(() => {
         if (!floatingWindow) {
           createNotificationWindow();
         }
+        console.log('captureWindowStatus', captureWindowStatus)
         // If captureWindow() can't find the selected window, show an error and exit the process
         if (captureWindowStatus != "Window found") {
           // const responseMessage = "Unable to capture this window, try another... running with no window context";

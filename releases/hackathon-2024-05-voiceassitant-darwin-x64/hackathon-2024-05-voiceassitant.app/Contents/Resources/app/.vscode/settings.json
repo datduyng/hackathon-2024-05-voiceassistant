@@ -1,0 +1,64 @@
+{
+  "editor.formatOnSave": true,
+  // disable auto save on .css files
+  "[css]": {
+    "editor.formatOnSave": false
+  },
+  "editor.tabCompletion": "on",
+  // exclude these following folders from workspace search
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.next": true,
+    // "**/node_modules": true,
+    "**/_build": true,
+    // "**/assets/build": true,
+    // "**/assets/public": true,
+    // "**/priv/static": true,
+    "**/deps": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "tailwindCSS.classAttributes": [
+    "class",
+    "className",
+    ".*Styles",
+    ".*styles",
+    ".*Variant",
+    "variant",
+    ".*Variants",
+    ".*Cva",
+    ".*cn"
+  ],
+  "tailwindCSS.experimental.classRegex": [
+    "class",
+    "className",
+    ".*Styles",
+    ".*styles",
+    ".*Variant",
+    "variant",
+    ".*Variants",
+    ".*Cva",
+    ".*cn"
+  ],
+  "headwind.runOnSave": true,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "editor.indentSize": 2,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredLightColorTheme": "Visual Studio Light - C++",
+  "workbench.colorTheme": "Visual Studio Light - C++"
+}

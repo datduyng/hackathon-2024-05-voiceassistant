@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hackathon Floating Window</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        background-color: #1e1e1e;
+        color: #f1f1f1;
+        margin: 0;
+        padding: 5px;
+        text-align: left;
+        position: relative;
+      }
+      .draggable {
+        -webkit-app-region: drag;
+        cursor: move;
+      }
+      #analysis {
+        padding: 10px;
+        margin-top: 5px;
+        font-size: 12px;
+      }
+      .window-message {
+        padding-top: 2px;
+      }
+      #closeBtn {
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 5px;
+        margin: -5px;
+        border: 5px solid transparent;
+        color: #f1f1f1;
+      }
+      .hidden {
+        display: none !important;
+      }
+      #save-skill {
+        all: unset; /* Resets all the browser default styles */
+        border: 2px solid white; /* White border with 2px thickness */
+        border-radius: 50px; /* Fully rounded edges */
+        padding: 4px 8px; /* Padding inside the button */
+        background-color: transparent; /* Transparent background */
+        cursor: pointer; /* Changes cursor to pointer on hover */
+        color: white; /* Text color */
+        font-size: 12px;
+        margin-left: 10px;
+        transition: background-color 0.3s; /* Smooth transition for background color */
+      }
+      #save-skill:hover {
+        background-color: #ffffff44; /* background hover */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="draggable">
+      <button id="closeBtn" title="Close">&times;</button>
+      <!-- Close button -->
+      <div id="analysis" class="draggable"></div>
+    </div>
+    <button id="save-skill" class="hidden" onclick="handleSaveSkill()">
+      Save Skill
+    </button>
+    <script src="floating-window.mjs"></script>
+  </body>
+</html>
