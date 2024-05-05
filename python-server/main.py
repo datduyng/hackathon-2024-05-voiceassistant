@@ -1,6 +1,7 @@
 # server.py
 
-from fastapi import FastAPI
+from typing import Any
+from fastapi import FastAPI, Body
 from fastapi.responses import StreamingResponse
 from interpreter import interpreter
 from dotenv import load_dotenv
@@ -58,12 +59,16 @@ curl -X GET 'https://openai-gateway.vercel.app/api/websearch/image?query=<YOUR_Q
   ]
 }}
 
-User Input: {message}
+{message}
 """
 
-    print(prompt)
     result = interpreter.chat(prompt, stream=False)
     return {"result": result}
+
+
+@app.post("/chat-raw-post")
+def chat_raw_endpoint_post(payload: Any = Body(None)):
+    return chat_raw_endpoint(payload.get("message"))
 
 
 @app.get("/history")

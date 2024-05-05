@@ -39,6 +39,7 @@ let tmpFileDir = USE_ELECTRON_PACKAGE_MANAGER
 
 const appConfig = {
   isDev: true,
+  pythonBaseUrl: 'http://localhost:5012',
   storageKeys: {
     openaiKey: "openaiKey",
   },
@@ -141,6 +142,7 @@ ipcMain.handle("get-api-key", (event) => {
 });
 
 ipcMain.on("audio-buffer", (event, buffer) => {
+  console.log("Received audio buffer");
   openAiApiKey = store.get(appConfig.storageKeys.openaiKey, "");
   openai = new OpenAI({
     apiKey: openAiApiKey,
@@ -188,7 +190,7 @@ ipcMain.on("audio-buffer", (event, buffer) => {
   });
 });
 
-let inputMethod = store.get("inputMethod", "voice");
+let inputMethod = store.get("inputMethod", "voice") ?? "voice";
 function updateNotificationWindowText(textToDisplay) {
   // If the window has been closed by the user, create a new one
   if (!floatingWindow) {
@@ -201,24 +203,56 @@ function updateNotificationWindowText(textToDisplay) {
 }
 
 async function processInputs(screenshotFilePath, questionInput) {
-  let visionApiResponse = await callVisionAPI(
-    screenshotFilePath,
-    questionInput
-  );
+  if (hasCapturedWindow) {
+    let visionApiResponse = await callVisionAPI(
+      screenshotFilePath,
+      questionInput
+    );
 
-  // If the Vision API response failed it will be null, set error message
-  visionApiResponse =
-    visionApiResponse ?? "There was an error calling the OpenAI Vision API";
+    // If the Vision API response failed it will be null, set error message
+    visionApiResponse =
+      visionApiResponse ?? "There was an error calling the OpenAI Vision API";
 
-  // Update both windows with the response text (refactor this)
-  mainWindow.webContents.send(
-    "send-vision-response-to-windows",
-    visionApiResponse
-  );
-  updateNotificationWindowText(visionApiResponse);
+    // Update both windows with the response text (refactor this)
+    mainWindow.webContents.send(
+      "send-vision-response-to-windows",
+      visionApiResponse
+    );
+    updateNotificationWindowText(visionApiResponse);
 
-  // Call function to generate and playback audio of the Vision API response
-  await playVisionApiResponse(visionApiResponse);
+    // Call function to generate and playback audio of the Vision API response
+    await playVisionApiResponse(visionApiResponse);
+  } else {
+    // research for existing skills if any by calling milvus
+    const existingSkill = "";
+
+    // if find skills, add it to the promps
+    const prompt = `${existingSkill
+      ? `## Existing skill\n${existingSkill}\n`
+      : ""
+      }
+## User query
+${questionInput}`;
+
+    let llmresponse = null;
+    try {
+      const axiosResponse = await axios.post(`${appConfig.pythonBaseUrl}/chat-raw-post`, {
+        message: prompt,
+      });
+      console.log("llmresponse", axiosResponse.data);
+      llmresponse = axiosResponse.data?.result?.at(-1)?.content;
+
+    } catch (error) {
+      console.error("Error calling OpenAI:", error);
+      llmresponse = "There was an error calling the OpenAI API";
+    }
+
+    mainWindow.webContents.send(
+      "send-vision-response-to-windows",
+      llmresponse
+    );
+    updateNotificationWindowText(llmresponse);
+  }
 }
 
 async function captureWindow(windowName) {
@@ -393,6 +427,7 @@ ipcMain.on("close-notification-window", () => {
   }
 });
 
+let hasCapturedWindow = false;
 app.whenReady().then(() => {
   createMainWindow();
   createFloatingWindow();
@@ -421,27 +456,36 @@ app.whenReady().then(() => {
       let activeWindowRef;
       try {
         activeWindowRef = await activeWindow();
-        captureWindowStatus = await captureWindow(activeWindowRef.title);
+        captureWindowStatus = await captureWindow(activeWindowRef?.title);
         if (!floatingWindow) {
           createNotificationWindow();
         }
         // If captureWindow() can't find the selected window, show an error and exit the process
         if (captureWindowStatus != "Window found") {
-          const responseMessage = "Unable to capture this window, try another.";
-          mainWindow.webContents.send(
-            "add-window-name-to-app",
-            responseMessage
-          );
-          updateNotificationWindowText(responseMessage);
-          return;
+          // const responseMessage = "Unable to capture this window, try another... running with no window context";
+          // mainWindow.webContents.send(
+          //   "add-window-name-to-app",
+          //   responseMessage
+          // );
+          // updateNotificationWindowText(responseMessage);
+          console.log("window not found:", captureWindowStatus);
+          hasCapturedWindow = false;
+          // return;
+        } else {
+          console.log("window found", captureWindowStatus);
+          hasCapturedWindow = true;
         }
 
         // If window is found, continue as expected
-        const responseMessage = `${activeWindowRef.owner.name}: ${activeWindowRef.title}`;
+        const responseMessage = hasCapturedWindow ? `${activeWindowRef?.owner?.name}: ${activeWindowRef?.title}` : "No window selected";
+        console.log("response message:", responseMessage);
         mainWindow.webContents.send("add-window-name-to-app", responseMessage);
         updateNotificationWindowText(responseMessage);
       } catch (error) {
         console.error("Error capturing the active window:", error);
+        hasCapturedWindow = false;
+        mainWindow.webContents.send("add-window-name-to-app", 'No capturing the active window');
+        updateNotificationWindowText("No capturing the active window");
       }
       // only start recording if the user is using voice input
       if (inputMethod == "voice") {
