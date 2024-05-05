@@ -39,6 +39,24 @@
         border: 5px solid transparent;
         color: #f1f1f1;
       }
+      .hidden {
+        display: none !important;
+      }
+      #save-skill {
+        all: unset; /* Resets all the browser default styles */
+        border: 2px solid white; /* White border with 2px thickness */
+        border-radius: 50px; /* Fully rounded edges */
+        padding: 4px 8px; /* Padding inside the button */
+        background-color: transparent; /* Transparent background */
+        cursor: pointer; /* Changes cursor to pointer on hover */
+        color: white; /* Text color */
+        font-size: 12px;
+        margin-left: 10px;
+        transition: background-color 0.3s; /* Smooth transition for background color */
+      }
+      #save-skill:hover {
+        background-color: #ffffff44; /* background hover */
+      }
     </style>
   </head>
   <body>
@@ -46,7 +64,10 @@
       <button id="closeBtn" title="Close">&times;</button>
       <!-- Close button -->
       <div id="analysis" class="draggable"></div>
-      <script src="floating-window.mjs"></script>
     </div>
+    <button id="save-skill" class="hidden" onclick="handleSaveSkill()">
+      Save Skill
+    </button>
+    <script src="floating-window.mjs"></script>
   </body>
 </html>
