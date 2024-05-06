@@ -21,6 +21,9 @@ git clone https://github.com/datduyng/hackathon-2024-05-voiceassistant
 npm install
 ```
 
+- `cp .env.example .env` and fill in the necessary environment variables
+  - Get OPENAI_API_KEY from https://platform.openai.com/account/api-keys
+  - Get OCTOAI_API_KEY from https://octoai.cloud/text
 
 - Start the Electron Dev server
 ```
@@ -31,3 +34,4 @@ npm run start
 ```
 npm run start-py-server
 ```
+
