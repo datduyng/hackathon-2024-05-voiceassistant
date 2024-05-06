@@ -2,10 +2,10 @@
 
 EchoAI reimagine how LLM should be used and interact in your daily life through providing the seamless voice interface and sandbox to run and automate your computer
 ## Example Usage
-- Open Chrome and research about TSLA stocks
-- Research indepth on TSLA news and EV market in general
-- Turn on/off dark/light mode
-- Highlight an error that you are facing in VScode > Ask EchoAI about the error
+- Ask "Open Chrome and research about TSLA stocks"
+- Ask "Research indepth on TSLA news and EV market in general"
+- Ask "Turn on/off dark/light mode"
+- Highlight an error that you are facing in VScode > Ask "Elaborate on this error"
 - Select a window > Ask "summarize the current window"
 
 ## EchoAI Skills
