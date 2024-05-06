@@ -22,8 +22,8 @@ npm install
 ```
 
 - `cp .env.example .env` and fill in the necessary environment variables
-  - Get OPENAI_API_KEY from https://platform.openai.com/account/api-keys
-  - Get OCTOAI_API_KEY from https://octoai.cloud/text
+  - Get `OPENAI_API_KEY` from https://platform.openai.com/account/api-keys
+  - Get `OCTOAI_API_KEY` from https://octoai.cloud/text
 
 - Start the Electron Dev server
 ```
